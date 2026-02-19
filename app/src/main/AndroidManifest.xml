@@ -10,6 +10,10 @@
     <!-- Permission to send SMS -->
     <uses-permission android:name="android.permission.SEND_SMS" />
 
+    <!-- Register receiver -->
+    <receiver android:name=".ReminderReceiver"/>
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

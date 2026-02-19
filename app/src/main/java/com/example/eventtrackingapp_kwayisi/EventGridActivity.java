@@ -3,16 +3,26 @@ import com.example.eventtrackingapp_kwayisi.data.utils.SMSHelper;
 
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
 public class EventGridActivity extends AppCompatActivity{
     EditText eventNameInput, eventDateInput;
     Button addEventButton;
@@ -45,26 +55,34 @@ public class EventGridActivity extends AppCompatActivity{
         // Add button logic
         addEventButton.setOnClickListener(v -> {
             String name = eventNameInput.getText().toString().trim();
-            String date = eventDateInput.getText().toString().trim();
+            String dateString = eventDateInput.getText().toString().trim();
 
-            if (!name.isEmpty() && !date.isEmpty()) {
-                eventList.add(new Event(name, date));
-                adapter.notifyItemInserted(eventList.size() - 1);
+            SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+            int userID = prefs.getInt("userID", -1);
 
-                eventNameInput.setText("");
-                eventDateInput.setText("");
+            if (!name.isEmpty() && !dateString.isEmpty()) {
+                try{
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm", Locale.getDefault());
 
-                if(SMSHelper.hasPermission(this)){
-                    SMSHelper.sendSms(
-                            "5551234567",
-                            "Event incoming!"
-                    );
+                    Date date = sdf.parse(dateString);
+                    long eventTimeMillis = date.getTime();
+
+                    //Create event object
+                    Event event = new Event(name, dateString, eventTimeMillis, userID);
+
+                    //Save to database here
+                    scheduleReminder(eventTimeMillis, name);
+
+                    eventList.add(event);
+                    adapter.notifyItemInserted(eventList.size() - 1);
+
+                    eventNameInput.setText("");
+                    eventDateInput.setText("");
                 }
-                else{
-                    requestPermissions(new String[]{Manifest.permission.SEND_SMS},
-                            SMS_PERMISSION_CODE
-                    );
+                catch(ParseException e){
+                    e.printStackTrace();
                 }
+
             }
         });
     }
@@ -86,5 +104,36 @@ public class EventGridActivity extends AppCompatActivity{
             }
         }
     }
+
+    private void scheduleReminder(long eventTimeMillis, String eventName) {
+
+        AlarmManager alarmManager =
+                (AlarmManager) getSystemService(ALARM_SERVICE);
+
+        Intent intent = new Intent(this, ReminderReceiver.class);
+        intent.putExtra("eventName", eventName);
+
+        if(eventTimeMillis <= System.currentTimeMillis()){
+            Toast.makeText(this, "Event time is in the future",
+                    Toast.LENGTH_SHORT).show();
+
+            return;
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this,
+                (int) System.currentTimeMillis(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+
+        alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                eventTimeMillis,
+                pendingIntent
+        );
+    }
+
 
 }
