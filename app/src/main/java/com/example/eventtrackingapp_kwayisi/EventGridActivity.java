@@ -1,4 +1,7 @@
 package com.example.eventtrackingapp_kwayisi;
+import com.example.eventtrackingapp_kwayisi.data.local.AppDatabase;
+import com.example.eventtrackingapp_kwayisi.data.local.EventDao;
+import com.example.eventtrackingapp_kwayisi.data.local.Event;
 import com.example.eventtrackingapp_kwayisi.data.utils.SMSHelper;
 
 
@@ -22,9 +25,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class EventGridActivity extends AppCompatActivity{
+
     EditText eventNameInput, eventDateInput;
     Button addEventButton;
     RecyclerView eventRecyclerView;
@@ -32,7 +37,8 @@ public class EventGridActivity extends AppCompatActivity{
     ArrayList<Event> eventList;
     EventAdapter adapter;
 
-    private static final int SMS_PERMISSION_CODE = 200;
+    EventDao eventDao;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -53,13 +59,26 @@ public class EventGridActivity extends AppCompatActivity{
         eventRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         eventRecyclerView.setAdapter(adapter);
 
+        AppDatabase db = AppDatabase.getInstance(this);
+        eventDao = db.eventDao();
+
+        SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+        int userID = prefs.getInt("userID", -1);
+
+        new Thread(() -> {
+            List<Event> userEvents = eventDao.getAllEvents(userID);
+
+            runOnUiThread(() -> {
+                eventList.clear();
+                eventList.addAll(userEvents);
+                adapter.notifyDataSetChanged();
+            });
+        }).start();
+
         // Add button logic
         addEventButton.setOnClickListener(v -> {
             String name = eventNameInput.getText().toString().trim();
             String dateString = eventDateInput.getText().toString().trim();
-
-            SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
-            int userID = prefs.getInt("userID", -1);
 
             if (!name.isEmpty() && !dateString.isEmpty()) {
                 try{
@@ -74,8 +93,14 @@ public class EventGridActivity extends AppCompatActivity{
                     //Save to database here
                     scheduleReminder(eventTimeMillis, name);
 
-                    eventList.add(event);
-                    adapter.notifyItemInserted(eventList.size() - 1);
+                    new Thread(() -> {
+                        eventDao.insertEvent(event);
+
+                        runOnUiThread(() -> {
+                            eventList.add(event);
+                            adapter.notifyItemInserted(eventList.size() - 1);
+                        });
+                    }).start();
 
                     eventNameInput.setText("");
                     eventDateInput.setText("");
@@ -99,36 +124,36 @@ public class EventGridActivity extends AppCompatActivity{
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode,
-            String[] permissions,
-            int[] grantResults) {
 
-        if (requestCode == SMS_PERMISSION_CODE) {
-            if (grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                SMSHelper.sendSms(
-                        "5551234567",
-                        "Event incoming!"
-                );
-            }
-        }
-    }
 
     private void scheduleReminder(long eventTimeMillis, String eventName) {
 
         AlarmManager alarmManager =
                 (AlarmManager) getSystemService(ALARM_SERVICE);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+
+                Intent intent = new Intent(
+                        android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                );
+                startActivity(intent);
+
+                Toast.makeText(this,
+                        "Please allow exact alarms in settings.",
+                        Toast.LENGTH_LONG).show();
+
+                return;
+            }
+        }
+
         Intent intent = new Intent(this, ReminderReceiver.class);
         intent.putExtra("eventName", eventName);
 
-        if(eventTimeMillis <= System.currentTimeMillis()){
-            Toast.makeText(this, "Event time must be in the future",
+        if (eventTimeMillis <= System.currentTimeMillis()) {
+            Toast.makeText(this,
+                    "Event time must be in the future",
                     Toast.LENGTH_SHORT).show();
-
             return;
         }
 
@@ -138,7 +163,6 @@ public class EventGridActivity extends AppCompatActivity{
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
-
 
         alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,

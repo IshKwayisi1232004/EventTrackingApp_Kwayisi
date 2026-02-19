@@ -11,13 +11,13 @@ import java.util.List;
 @Dao
 public interface EventDao {
     @Insert
-    void InsertEvent(Event event);
+    void insertEvent(Event event);
 
-    @Query("SELECT * FROM events")
-    List<Event> getAllEvents();
+    @Query("SELECT * FROM events WHERE userID = :userID")
+    List<Event> getAllEvents(int userID);
 
     @Update
-    void gpdateEvent(Event event);
+    void updateEvent(Event event);
 
     @Delete
     void deleteEvent(Event event);

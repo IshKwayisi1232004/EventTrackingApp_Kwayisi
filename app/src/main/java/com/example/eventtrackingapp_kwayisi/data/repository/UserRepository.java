@@ -15,10 +15,10 @@ public class UserRepository {
         executorService = Executors.newSingleThreadExecutor();
     }
 
-    public void register(String email, String password){
-        executorService.execute(() -> {
-            userDao.insertUser(new User(email, password));
-        });
+    public long register(String username, String password) {
+
+        User user = new User(username, password);
+        return userDao.insertUser(user);
     }
 
     public void login(String email, String password, LoginCallback callback){

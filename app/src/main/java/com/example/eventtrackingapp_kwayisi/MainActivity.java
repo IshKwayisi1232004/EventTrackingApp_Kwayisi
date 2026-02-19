@@ -2,6 +2,7 @@ package com.example.eventtrackingapp_kwayisi;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
@@ -13,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.eventtrackingapp_kwayisi.data.local.AppDatabase;
+import com.example.eventtrackingapp_kwayisi.data.local.User;
 import com.example.eventtrackingapp_kwayisi.data.repository.UserRepository;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createUser() {
+
         String username = usernameInput.getText().toString().trim();
         String password = passwordInput.getText().toString().trim();
 
@@ -96,8 +99,26 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        userRepository.register(username, password);
+        new Thread(() -> {
 
-        Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
+            long userId = userRepository.register(username, password);
+
+            runOnUiThread(() -> {
+
+                SharedPreferences prefs =
+                        getSharedPreferences("session", MODE_PRIVATE);
+                prefs.edit().putInt("userID", (int) userId).apply();
+
+                Toast.makeText(this,
+                        "Account created successfully!",
+                        Toast.LENGTH_SHORT).show();
+
+                Intent intent =
+                        new Intent(MainActivity.this, EventGridActivity.class);
+                startActivity(intent);
+                finish();
+            });
+
+        }).start();
     }
 }

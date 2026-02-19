@@ -1,5 +1,8 @@
 package com.example.eventtrackingapp_kwayisi;
 
+import com.example.eventtrackingapp_kwayisi.data.local.Event;
+
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,12 +13,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
-    private ArrayList<Event> eventList;
+    private List<Event> eventList;
 
-    public EventAdapter(ArrayList<Event> eventList) {
+    public EventAdapter(List<Event> eventList) {
         this.eventList = eventList;
     }
 
@@ -31,8 +35,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
 
-        holder.eventNameText.setText(event.name);
-        holder.eventDateText.setText(event.date);
+        holder.eventNameText.setText(event.getEventName());
+        holder.eventDateText.setText(event.getEventDate());
 
         holder.deleteButton.setOnClickListener(v -> {
             eventList.remove(position);
