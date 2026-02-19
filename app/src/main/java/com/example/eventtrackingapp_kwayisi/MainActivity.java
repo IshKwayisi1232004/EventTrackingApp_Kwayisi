@@ -10,7 +10,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.eventtrackingapp_kwayisi.data.local.AppDatabase;
+import com.example.eventtrackingapp_kwayisi.data.repository.UserRepository;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.eventtrackingapp_kwayisi.data.repository.UserRepository;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,10 +23,15 @@ public class MainActivity extends AppCompatActivity {
     EditText usernameInput, passwordInput;
     Button loginButton, createAccountButton;
 
+    UserRepository userRepository;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        AppDatabase db = AppDatabase.getInstance(this);
+        userRepository = new UserRepository(db.userDao());
 
         textStatus = findViewById(R.id.statusText);
         usernameInput = findViewById(R.id.usernameInput);
@@ -30,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
         createAccountButton = findViewById(R.id.createAccountButton);
 
         loginButton.setOnClickListener(v -> loginUser());
+        createAccountButton.setOnClickListener(v -> createUser());
 
     }
 
@@ -39,24 +50,29 @@ public class MainActivity extends AppCompatActivity {
         String password = passwordInput.getText().toString().trim();
 
         // Check if the name variable is null or empty
-        if(username != null || !password.isEmpty()){
+        if(username.isEmpty() || password.isEmpty()){
             textStatus.setText("Please enter both username and password.");
+            return;
         }
 
         // Placeholder logic (replace with database later)
-        if(username.equals("admin") && password.equals("1234")){
-            Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
+        userRepository.login(username, password, success -> {
+            runOnUiThread(() -> {
+                if(success){
+                    Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
 
-            // TRANSITION TO NEXT SCREEN
-            Intent intent = new Intent(MainActivity.this, EventGridActivity.class);
-            startActivity(intent);
+                    // TRANSITION TO NEXT SCREEN
+                    Intent intent = new Intent(MainActivity.this, EventGridActivity.class);
+                    startActivity(intent);
 
-            // Optional: prevent going back to login
-            finish();
-        }
-        else{
-            textStatus.setText("Invalid login credentials.");
-        }
+                    // Optional: prevent going back to login
+                    finish();
+                }
+                else{
+                    textStatus.setText("Invalid login credentials.");
+                }
+            });
+        });
     }
 
     private void createUser() {
@@ -68,7 +84,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Placeholder: save to database later
+        userRepository.register(username, password);
+
         Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
     }
 }
