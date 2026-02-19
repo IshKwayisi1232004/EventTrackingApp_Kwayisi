@@ -1,6 +1,8 @@
 package com.example.eventtrackingapp_kwayisi;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -41,6 +43,16 @@ public class MainActivity extends AppCompatActivity {
 
         loginButton.setOnClickListener(v -> loginUser());
         createAccountButton.setOnClickListener(v -> createUser());
+
+        if (checkSelfPermission(Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            requestPermissions(
+                    new String[]{Manifest.permission.SEND_SMS},
+                    101
+            );
+        }
+
 
     }
 

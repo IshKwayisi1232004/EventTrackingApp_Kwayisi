@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -85,6 +86,17 @@ public class EventGridActivity extends AppCompatActivity{
 
             }
         });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        300
+                );
+            }
+        }
     }
 
     @Override
@@ -114,7 +126,7 @@ public class EventGridActivity extends AppCompatActivity{
         intent.putExtra("eventName", eventName);
 
         if(eventTimeMillis <= System.currentTimeMillis()){
-            Toast.makeText(this, "Event time is in the future",
+            Toast.makeText(this, "Event time must be in the future",
                     Toast.LENGTH_SHORT).show();
 
             return;
@@ -134,6 +146,4 @@ public class EventGridActivity extends AppCompatActivity{
                 pendingIntent
         );
     }
-
-
 }

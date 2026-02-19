@@ -10,10 +10,17 @@ public class ReminderReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent){
+
+        String eventName = intent.getStringExtra("eventName");
+
+        // Show notification
+        showNotification(context, eventName);
+
+        // If permission is granted, send SMS
         if(SMSHelper.hasPermission(context)){
             SMSHelper.sendSms(
                     "5551234567",
-                    "Reminder: You have an upcoming event!"
+                    "Reminder: Your event \"" + eventName + "\" is happening now!"
             );
         }
     }
