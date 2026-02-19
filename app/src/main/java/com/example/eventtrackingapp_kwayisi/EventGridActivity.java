@@ -1,5 +1,9 @@
 package com.example.eventtrackingapp_kwayisi;
+import com.example.eventtrackingapp_kwayisi.data.utils.SMSHelper;
 
+
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,6 +20,8 @@ public class EventGridActivity extends AppCompatActivity{
 
     ArrayList<Event> eventList;
     EventAdapter adapter;
+
+    private static final int SMS_PERMISSION_CODE = 200;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -47,7 +53,38 @@ public class EventGridActivity extends AppCompatActivity{
 
                 eventNameInput.setText("");
                 eventDateInput.setText("");
+
+                if(SMSHelper.hasPermission(this)){
+                    SMSHelper.sendSms(
+                            "5551234567",
+                            "Event incoming!"
+                    );
+                }
+                else{
+                    requestPermissions(new String[]{Manifest.permission.SEND_SMS},
+                            SMS_PERMISSION_CODE
+                    );
+                }
             }
         });
     }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            String[] permissions,
+            int[] grantResults) {
+
+        if (requestCode == SMS_PERMISSION_CODE) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                SMSHelper.sendSms(
+                        "5551234567",
+                        "Event incoming!"
+                );
+            }
+        }
+    }
+
 }

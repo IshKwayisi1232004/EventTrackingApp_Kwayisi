@@ -4,11 +4,22 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "events")
+@Entity(
+        tableName = "events",
+        foreignKeys = @ForeignKey(
+                entity = User.class,
+                parentColumns = "id",
+                childColumns = "userID",
+                onDelete = ForeignKey.CASCADE,
+                onUpdate = ForeignKey.CASCADE
+        )
+)
+
 public class Event {
     @PrimaryKey(autoGenerate = true)
     private int eventID;
 
+    private int userID;
     private String eventName;
     private String eventDate;
 
