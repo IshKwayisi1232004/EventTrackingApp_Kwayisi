@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+
+
         // Placeholder logic (replace with database later)
         userRepository.login(username, password, success -> {
             runOnUiThread(() -> {
@@ -99,11 +101,20 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        if(password.length() < 6){
+            textStatus.setText("Password must be a minimum of 6 characters.");
+        }
+
         new Thread(() -> {
 
             long userId = userRepository.register(username, password);
 
             runOnUiThread(() -> {
+
+                if(userId == -1){
+                    textStatus.setText("This account already exists!");
+                    return;
+                }
 
                 SharedPreferences prefs =
                         getSharedPreferences("session", MODE_PRIVATE);

@@ -17,8 +17,13 @@ public class UserRepository {
 
     public long register(String username, String password) {
 
-        User user = new User(username, password);
-        return userDao.insertUser(user);
+        User existing = userDao.getUser(username);
+
+        if(existing != null){
+            return 1;
+        }
+
+        return userDao.insertUser(new User(username, password));
     }
 
     public void login(String email, String password, LoginCallback callback){
