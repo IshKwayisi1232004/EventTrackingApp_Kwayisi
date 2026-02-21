@@ -2,6 +2,7 @@ package com.example.eventtrackingapp_kwayisi.data.local;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(
@@ -12,7 +13,8 @@ import androidx.room.PrimaryKey;
                 childColumns = "userID",
                 onDelete = ForeignKey.CASCADE,
                 onUpdate = ForeignKey.CASCADE
-        )
+        ),
+        indices = @Index("userID")
 )
 
 public class Event {
