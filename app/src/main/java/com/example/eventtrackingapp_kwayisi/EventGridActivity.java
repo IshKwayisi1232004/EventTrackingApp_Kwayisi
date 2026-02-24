@@ -39,7 +39,6 @@ public class EventGridActivity extends AppCompatActivity{
 
     EventDao eventDao;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -55,7 +54,25 @@ public class EventGridActivity extends AppCompatActivity{
         eventList = new ArrayList<>();
 
         // RecyclerView setup
-        adapter = new EventAdapter(eventList);
+        adapter = new EventAdapter(eventList, new EventAdapter.OnEventActionListener() {
+
+            @Override
+            public void onDelete(Event event) {
+                new Thread(() -> {
+                    eventDao.deleteEvent(event);
+                    runOnUiThread(() -> reloadEvents());
+                }).start();
+            }
+
+            @Override
+            public void onEdit(Event event) {
+                Intent intent = new Intent(EventGridActivity.this, EditEventActivity.class);
+                intent.putExtra("event_id", event.getEventID());
+                intent.putExtra("event_name", event.getEventName());
+                intent.putExtra("event_date", event.getEventDate());
+                startActivity(intent);
+            }
+        });
         eventRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         eventRecyclerView.setAdapter(adapter);
 
@@ -82,7 +99,7 @@ public class EventGridActivity extends AppCompatActivity{
 
             if (!name.isEmpty() && !dateString.isEmpty()) {
                 try{
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm", Locale.getDefault());
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
 
                     Date date = sdf.parse(dateString);
                     long eventTimeMillis = date.getTime();
@@ -169,5 +186,38 @@ public class EventGridActivity extends AppCompatActivity{
                 eventTimeMillis,
                 pendingIntent
         );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+        int userID = prefs.getInt("userID", -1);
+
+        new Thread(() -> {
+            List<Event> userEvents = eventDao.getAllEvents(userID);
+
+            runOnUiThread(() -> {
+                eventList.clear();
+                eventList.addAll(userEvents);
+                adapter.notifyDataSetChanged();
+            });
+        }).start();
+    }
+
+    private void reloadEvents() {
+        SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+        int userID = prefs.getInt("userID", -1);
+
+        new Thread(() -> {
+            List<Event> userEvents = eventDao.getAllEvents(userID);
+
+            runOnUiThread(() -> {
+                eventList.clear();
+                eventList.addAll(userEvents);
+                adapter.notifyDataSetChanged();
+            });
+        }).start();
     }
 }

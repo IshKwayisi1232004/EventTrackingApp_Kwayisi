@@ -40,6 +40,7 @@
 
         <activity android:name=".EventGridActivity" />
         <activity android:name=".SMSActivity" />
+        <activity android:name=".EditEventActivity"/>
 
         <!-- Register receiver -->
         <receiver android:name=".ReminderReceiver"/>

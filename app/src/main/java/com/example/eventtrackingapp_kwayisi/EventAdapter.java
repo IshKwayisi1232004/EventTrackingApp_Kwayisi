@@ -1,13 +1,17 @@
 package com.example.eventtrackingapp_kwayisi;
 
 import com.example.eventtrackingapp_kwayisi.data.local.Event;
+import com.example.eventtrackingapp_kwayisi.data.local.EventDao;
 
 
+import android.app.Activity;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,8 +23,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     private List<Event> eventList;
 
-    public EventAdapter(List<Event> eventList) {
+    public interface OnEventActionListener {
+        void onDelete(Event event);
+        void onEdit(Event event);
+    }
+
+    private OnEventActionListener listener;
+
+    public EventAdapter(List<Event> eventList, OnEventActionListener listener) {
         this.eventList = eventList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -38,10 +50,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.eventNameText.setText(event.getEventName());
         holder.eventDateText.setText(event.getEventDate());
 
+        // Edit button click
+        holder.editButton.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEdit(event);
+            }
+        });
+
+        // Delete button click
         holder.deleteButton.setOnClickListener(v -> {
-            eventList.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, eventList.size());
+            if (listener != null) {
+                listener.onDelete(event);
+            }
         });
     }
 
@@ -54,12 +74,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         TextView eventNameText, eventDateText;
         Button deleteButton;
+        Button editButton;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             eventNameText = itemView.findViewById(R.id.rowEventName);
             eventDateText = itemView.findViewById(R.id.rowEventDate);
             deleteButton = itemView.findViewById(R.id.deleteButton);
+            editButton = itemView.findViewById(R.id.editButton);
         }
     }
 }
